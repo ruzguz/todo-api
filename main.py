@@ -1,12 +1,15 @@
 # FLask modules 
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Utilities
+import os
+import uuid
 
 # App initialization
 app = Flask(__name__)
 
-# Utilities
-import os
 
 app.config['SECRET_KEY'] = b'\x91\xa3\xb2T\x88\xe0\xa78\x05f\xdd\x14\x1ed\xcc:'
 db_path = os.path.abspath(os.path.dirname(__file__))
@@ -27,6 +30,35 @@ class Todo(db.Model):
     text = db.Column(db.String(50), unique=True)
     complete = db.Column(db.Boolean())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False)
+
+# User routes
+@app.route('/users', methods=['GET'])
+def get_users():
+    pass
+
+@app.route('/users/<user_id>', methods=['GET'])
+def get_user():
+    pass
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    data = request.get_json()
+
+    hashed_password = generate_password_hash(data['password'], method='sha256')
+    new_user = User(id=str(uuid.uuid4()), name=data['name'], password=hashed_password, is_admin=False)
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({ 'message': 'new user created' })
+
+@app.route('/users/<user_id>', methods=['PUT'])
+def promote_user():
+    pass
+
+@app.route('/users/<user_id>', methods=['DELETE'])
+def delete_user():
+    pass
 
 
 # Run server
