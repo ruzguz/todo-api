@@ -1,11 +1,14 @@
 # FLask modules 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Utilities
 import os
 import uuid
+import jwt
+import datetime
+from functools import wraps
 
 # App initialization
 app = Flask(__name__)
@@ -16,6 +19,7 @@ db_path = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_path, 'test.db') 
 
 db = SQLAlchemy(app)
+
 
 # Models
 class User(db.Model):
@@ -31,9 +35,33 @@ class Todo(db.Model):
     complete = db.Column(db.Boolean())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False)
 
-# User routes
+""" Auth decorators """
+def token_required(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        token = None
+
+        # Check if the user send the token
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        if not token:
+            return jsonify({ 'message': 'Token is missing!' }), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+            current_user = User.query.get(data['id'])
+        except:
+            return jsonify({ 'message': 'Token is invalid!' }), 401
+
+        return func(current_user, *args, **kwargs)
+    
+    return wrapped
+
+""" User routes """
 @app.route('/users', methods=['GET'])
-def get_users():
+@token_required
+def get_users(current_user):
     # getting users from database
     users = User.query.all()
 
@@ -49,9 +77,9 @@ def get_users():
     return jsonify({ 'users': output})
 
 
-
 @app.route('/users/<user_id>', methods=['GET'])
-def get_user(user_id):
+@token_required
+def get_user(current_user, user_id):
     user = User.query.get(user_id)
     
     if not user:
@@ -66,7 +94,8 @@ def get_user(user_id):
 
 
 @app.route('/users', methods=['POST'])
-def create_user():
+@token_required
+def create_user(current_user):
     data = request.get_json()
 
     hashed_password = generate_password_hash(data['password'], method='sha256')
@@ -78,7 +107,8 @@ def create_user():
     return jsonify({ 'message': 'new user created' })
 
 @app.route('/users/<user_id>', methods=['PUT'])
-def set_admin(user_id):
+@token_required
+def set_admin(current_user, user_id):
     user = User.query.get(user_id)
 
     if not user:
@@ -91,7 +121,8 @@ def set_admin(user_id):
     return jsonify({ 'message' : message })
 
 @app.route('/users/<user_id>', methods=['DELETE'])
-def delete_user(user_id):
+@token_required
+def delete_user(current_user, user_id):
     user = User.query.get(user_id)
 
     if not user:
@@ -101,6 +132,26 @@ def delete_user(user_id):
     db.session.commit()
 
     return jsonify({ 'message': 'The user has been deleted' })
+
+"""  Auth routes """
+@app.route('/login', methods=['POST'])
+def login():
+    auth = request.authorization
+
+    if not auth or not auth.username or not auth.password:
+        return make_response('Could not verify', 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
+    
+    user =  User.query.filter_by(name=auth.username).first()
+
+    if not user:
+        return make_response('Could not verify', 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
+
+    if check_password_hash(user.password, auth.password):
+        token = jwt.encode({ 'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30) },
+                           app.config['SECRET_KEY'])
+        
+        return jsonify({ 'token': token.decode('UTF-8') })
+
 
 
 # Run server
