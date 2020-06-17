@@ -78,8 +78,17 @@ def create_user():
     return jsonify({ 'message': 'new user created' })
 
 @app.route('/users/<user_id>', methods=['PUT'])
-def promote_user(user_id):
-    pass
+def set_admin(user_id):
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({ 'message': 'user not found' })
+
+    user.is_admin = not user.is_admin
+    db.session.commit()
+
+    message = 'The user has been promoted to admin' if user.is_admin else 'The user has been demoted'
+    return jsonify({ 'message' : message })
 
 @app.route('/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
