@@ -34,7 +34,21 @@ class Todo(db.Model):
 # User routes
 @app.route('/users', methods=['GET'])
 def get_users():
-    pass
+    # getting users from database
+    users = User.query.all()
+
+    output = []
+
+    for user in users:
+        user_data = {}
+        user_data['id'] = user.id
+        user_data['name'] = user.name
+        user_data['is_admin'] = user.is_admin
+        output.append(user_data)
+    
+    return jsonify({ 'users': output})
+
+
 
 @app.route('/users/<user_id>', methods=['GET'])
 def get_user():
