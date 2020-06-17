@@ -92,7 +92,15 @@ def set_admin(user_id):
 
 @app.route('/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    pass
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({ 'message': 'User not found' })
+    
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({ 'message': 'The user has been deleted' })
 
 
 # Run server
