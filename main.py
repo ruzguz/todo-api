@@ -38,7 +38,7 @@ class Todo(db.Model):
 """ Auth decorators """
 def token_required(func):
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         token = None
 
         # Check if the user send the token
@@ -56,12 +56,28 @@ def token_required(func):
 
         return func(current_user, *args, **kwargs)
     
-    return wrapped
+    return wrapper
+
+# def admin_required():
+#     def decorator(func):
+#         def wrapper(*args, **kwargs):
+#             if not current_user.is_admin:
+#                 return jsonify({ 'message': 'cannot perform this function' }), 403
+            
+#             return func(current_user, *args, **kwargs)
+#         return wrapper
+#     return decorator
+
 
 """ User routes """
 @app.route('/users', methods=['GET'])
 @token_required
 def get_users(current_user):
+
+    # Admin required
+    if not current_user.is_admin:
+        return jsonify({ 'message': 'You have to be admin to perform this function!' })
+
     # getting users from database
     users = User.query.all()
 
@@ -109,6 +125,11 @@ def create_user(current_user):
 @app.route('/users/<user_id>', methods=['PUT'])
 @token_required
 def set_admin(current_user, user_id):
+
+    # Admin required
+    if not current_user.is_admin:
+        return jsonify({ 'message': 'You have to be admin to perform this function!' })
+
     user = User.query.get(user_id)
 
     if not user:
@@ -123,6 +144,11 @@ def set_admin(current_user, user_id):
 @app.route('/users/<user_id>', methods=['DELETE'])
 @token_required
 def delete_user(current_user, user_id):
+
+    # Admin required
+    if not current_user.is_admin:
+        return jsonify({ 'message': 'You have to be admin to perform this function!' })
+
     user = User.query.get(user_id)
 
     if not user:
