@@ -33,7 +33,7 @@ class Todo(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     text = db.Column(db.String(50), unique=True)
     complete = db.Column(db.Boolean())
-    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
 
 """ Auth decorators """
 def token_required(func):
@@ -110,8 +110,7 @@ def get_user(current_user, user_id):
 
 
 @app.route('/users', methods=['POST'])
-@token_required
-def create_user(current_user):
+def create_user():
     data = request.get_json()
 
     hashed_password = generate_password_hash(data['password'], method='sha256')
@@ -178,7 +177,37 @@ def login():
         
         return jsonify({ 'token': token.decode('UTF-8') })
 
+""" Todos routes """
+@app.route('/todos', methods=['GET'])
+@token_required
+def get_user_todos(current_user):
+    pass
 
+@app.route('/todos', methods=['POST'])
+@token_required
+def create_todo(current_user):
+    data = request.get_json()
+    new_todo = Todo(text=data['text'], complete=False, user_id=current_user.id)
+
+    db.session.add(new_todo)
+    db.session.commit()
+
+    return jsonify({ 'message': 'Todo created' })
+
+@app.route('/todos/<todo_id>', methods=['GET'])
+@token_required
+def get_todo(current_user, todo_id):
+    pass
+
+@app.route('/todos/<todo_id>', methods=['PUT'])
+@token_required
+def set_todo_status(current_user, todo_id):
+    pass
+
+@app.route('/todos/<todo_id>', methods=['DELETE'])
+@token_required
+def delete_todo(current_user, todo_id):
+    pass
 
 # Run server
 if __name__ == '__main__':
