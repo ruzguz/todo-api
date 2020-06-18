@@ -84,10 +84,12 @@ def get_users(current_user):
     output = []
 
     for user in users:
-        user_data = {}
-        user_data['id'] = user.id
-        user_data['name'] = user.name
-        user_data['is_admin'] = user.is_admin
+        user_data = {
+            'id': user.id,
+            'name': user.name,
+            'is_admin': user.is_admin
+        }
+
         output.append(user_data)
     
     return jsonify({ 'users': output})
@@ -101,10 +103,11 @@ def get_user(current_user, user_id):
     if not user:
         return jsonify({ 'message': 'User not found'})
 
-    user_data  = {}
-    user_data['id'] = user.id
-    user_data['name'] = user.name
-    user_data['is_admin'] = user.is_admin
+    user_data  = {
+            'id': user.id,
+            'name': user.name,
+            'is_admin': user.is_admin
+        }
 
     return jsonify({ 'user': user_data })
 
@@ -186,11 +189,11 @@ def get_user_todos(current_user):
     output = []
 
     for todo in todos:
-        todo_data = {}
-        todo_data['id'] = todo.id
-        todo_data['text'] = todo.text
-        todo_data['complete'] = todo.complete
-        todo_data['user_id'] = current_user.id
+        todo_data = {
+            'id': todo.id,
+            'text': todo.text,
+            'complete': todo.complete,
+        }
 
         output.append(todo_data)
 
@@ -221,7 +224,6 @@ def get_todo(current_user, todo_id):
         'id': todo.id,
         'text': todo.text,
         'complete': todo.complete,
-        'user_id': todo.user_id,
     }
 
     return jsonify({ 'todo': todo_data })
