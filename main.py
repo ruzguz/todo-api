@@ -58,16 +58,13 @@ def token_required(func):
     
     return wrapper
 
-# def admin_required():
-#     def decorator(func):
-#         def wrapper(*args, **kwargs):
-#             if not current_user.is_admin:
-#                 return jsonify({ 'message': 'cannot perform this function' }), 403
-            
-#             return func(current_user, *args, **kwargs)
-#         return wrapper
-#     return decorator
 
+
+""" Test routes """
+
+@app.route('/hello' methods=['GET'])
+def test():
+    return jsonify({ 'message': 'Hello world!!!' })
 
 """ User routes """
 @app.route('/users', methods=['GET'])
