@@ -172,7 +172,7 @@ def login():
         return make_response('Could not verify', 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
 
     if check_password_hash(user.password, auth.password):
-        token = jwt.encode({ 'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30) },
+        token = jwt.encode({ 'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2) },
                            app.config['SECRET_KEY'])
         
         return jsonify({ 'token': token.decode('UTF-8') })
@@ -181,7 +181,21 @@ def login():
 @app.route('/todos', methods=['GET'])
 @token_required
 def get_user_todos(current_user):
-    pass
+    todos =  Todo.query.filter_by(user_id=current_user.id)
+
+    output = []
+
+    for todo in todos:
+        todo_data = {}
+        todo_data['id'] = todo.id
+        todo_data['text'] = todo.text
+        todo_data['complete'] = todo.complete
+        todo_data['user_id'] = current_user.id
+
+        output.append(todo_data)
+
+    return jsonify({ 'todos': output })
+
 
 @app.route('/todos', methods=['POST'])
 @token_required
@@ -197,7 +211,20 @@ def create_todo(current_user):
 @app.route('/todos/<todo_id>', methods=['GET'])
 @token_required
 def get_todo(current_user, todo_id):
-    pass
+    todo = Todo.query.get(todo_id)
+
+    if not todo:
+        return jsonify({ 'message': 'Todo not found' }), 404
+    
+
+    todo_data = {
+        'id': todo.id,
+        'text': todo.text,
+        'complete': todo.complete,
+        'user_id': todo.user_id,
+    }
+
+    return jsonify({ 'todo': todo_data })
 
 @app.route('/todos/<todo_id>', methods=['PUT'])
 @token_required
