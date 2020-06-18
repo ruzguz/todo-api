@@ -246,7 +246,15 @@ def set_todo_status(current_user, todo_id):
 @app.route('/todos/<todo_id>', methods=['DELETE'])
 @token_required
 def delete_todo(current_user, todo_id):
-    pass
+    todo = Todo.query.get(todo_id)
+
+    if not todo:
+        return jsonify({ 'message': 'Todo not found' })
+
+    db.session.delete(todo)
+    db.session.commit()
+
+    return jsonify({ 'message': 'Todo has been deleted' })
 
 # Run server
 if __name__ == '__main__':
