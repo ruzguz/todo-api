@@ -62,7 +62,7 @@ def token_required(func):
 
 """ Test routes """
 
-@app.route('/hello' methods=['GET'])
+@app.route('/hello', methods=['GET'])
 def test():
     return jsonify({ 'message': 'Hello world!!!' })
 
