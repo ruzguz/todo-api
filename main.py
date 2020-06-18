@@ -231,7 +231,17 @@ def get_todo(current_user, todo_id):
 @app.route('/todos/<todo_id>', methods=['PUT'])
 @token_required
 def set_todo_status(current_user, todo_id):
-    pass
+    todo = Todo.query.get(todo_id)
+
+    if not todo:
+        return jsonify({ 'message': 'Todo not found' }), 404
+
+    todo.complete = not todo.complete
+    db.session.commit()
+
+    message = 'The taks is complete' if todo.complete else 'The taks is incomplete'
+
+    return jsonify({ 'message': message })
 
 @app.route('/todos/<todo_id>', methods=['DELETE'])
 @token_required
