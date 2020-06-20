@@ -2,6 +2,7 @@
 from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import validates
 
 # Utilities
 import os
@@ -28,6 +29,12 @@ class User(db.Model):
     password = db.Column(db.String(100))
     is_admin = db.Column(db.Boolean())
     todos = db.relationship('Todo', backref='user', lazy=True)
+
+    @validates('name')
+    def validate_username(self, key, name):
+        assert User.query.filter_by(name=name), 'This username already exists'
+        return name
+
 
 class Todo(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
@@ -69,6 +76,19 @@ def token_required(func):
 @app.route('/hello', methods=['GET'])
 def test():
     return jsonify({ 'message': 'Hello world!!!' })
+
+
+@app.route('/seed-db', methods=['GET'])
+def load_initial_users():
+    admin = User(id=str(uuid.uuid4()), name='admin', is_admin=True, password=generate_password_hash('1234'))
+    user1 = User(id=str(uuid.uuid4()), name='user1', is_admin=False, password=generate_password_hash('1234'))
+    user2 = User(id=str(uuid.uuid4()), name='user2', is_admin=False, password=generate_password_hash('1234'))
+    user3 = User(id=str(uuid.uuid4()), name='user3', is_admin=False, password=generate_password_hash('1234'))
+    db.session.add(admin); db.session.add(user1); db.session.add(user2); db.session.add(user3)
+    db.session.commit()
+
+    return jsonify({ 'message': 'Inital data loaded' })
+
 
 """ User routes """
 @app.route('/users', methods=['GET'])
