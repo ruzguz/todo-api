@@ -66,7 +66,6 @@ def token_required(func):
 
 
 """ Test routes """
-
 @app.route('/hello', methods=['GET'])
 def test():
     return jsonify({ 'message': 'Hello world!!!' })
@@ -78,7 +77,7 @@ def get_users(current_user):
 
     # Admin required
     if not current_user.is_admin:
-        return jsonify({ 'message': 'You have to be admin to perform this function!' })
+        return jsonify({ 'message': 'You have to be admin to perform this function!' }), 403
 
     # getting users from database
     users = User.query.all()
@@ -103,7 +102,12 @@ def get_user(current_user, user_id):
     user = User.query.get(user_id)
     
     if not user:
-        return jsonify({ 'message': 'User not found'})
+        return jsonify({ 'message': 'User not found'}), 404
+
+
+    if not current_user.is_admin and current_user.id != user_id:
+        return jsonify({ 'message': 'You cannot see the information of another user' }), 403
+
 
     user_data  = {
             'id': user.id,
