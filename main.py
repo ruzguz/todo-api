@@ -25,14 +25,14 @@ db = SQLAlchemy(app)
 # Models
 class User(db.Model):
     id = db.Column(db.String(50), primary_key=True)
-    name = db.Column(db.String(50))
+    name = db.Column(db.String(50), unique=True)
     password = db.Column(db.String(100))
     is_admin = db.Column(db.Boolean())
     todos = db.relationship('Todo', backref='user', lazy=True)
 
     @validates('name')
-    def validate_username(self, key, name):
-        assert User.query.filter_by(name=name), 'This username already exists'
+    def validate_name(self, key, name):
+        assert not User.query.filter_by(name=name).first(), 'This username already exists'
         return name
 
 
