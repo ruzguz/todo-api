@@ -41,18 +41,23 @@ def token_required(func):
     def wrapper(*args, **kwargs):
         token = None
 
-        # Check if the user send the token
+        # Check if the user sent the token
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
 
+        # if user does not sent the token return an error
         if not token:
-            return jsonify({ 'message': 'Token is missing!' }), 401
+            message = jsonify({ 'message': 'Token is missing' })
+            return make_response(message, 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
 
         try:
+            # Decoding the token
             data = jwt.decode(token, app.config['SECRET_KEY'])
             current_user = User.query.get(data['id'])
         except:
-            return jsonify({ 'message': 'Token is invalid!' }), 401
+            # Return error message if the token is invalid
+            message = jsonify({ 'message': 'Token is invalid!' })
+            return make_response(message, 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
 
         return func(current_user, *args, **kwargs)
     
@@ -161,21 +166,32 @@ def delete_user(current_user, user_id):
 """  Auth routes """
 @app.route('/login', methods=['POST'])
 def login():
+    # Getting auth information from request
     auth = request.authorization
 
+    # Check if the server recive all auth information 
     if not auth or not auth.username or not auth.password:
-        return make_response('Could not verify', 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
+        message = jsonify({ 'message': 'Could not verify, please introduce the username and the password' })
+        return make_response(message, 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
     
+    # Getting user from DB
     user =  User.query.filter_by(name=auth.username).first()
 
+    # Check if user exists
     if not user:
-        return make_response('Could not verify', 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
+        message = jsonify({ 'message': 'User doesn\'t exists' })
+        return make_response( message, 401, { 'WWW-Authenticate': 'Basic realm="Login Required!"' })
 
+    # Check user password
     if check_password_hash(user.password, auth.password):
+        # Creating JWT
         token = jwt.encode({ 'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2) },
                            app.config['SECRET_KEY'])
         
         return jsonify({ 'token': token.decode('UTF-8') })
+    else:
+        message = jsonify({ 'message': 'The username and password you entered did not match our records.' })
+        return make_response(message, 401, { 'WWW-Authenticate': 'Basic="Login required!"' })
 
 """ Todos routes """
 @app.route('/todos', methods=['GET'])
